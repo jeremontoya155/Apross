@@ -215,6 +215,110 @@ app.get('/logout', (req, res) => {
   });
 });
 
+// Ruta para descargar códigos APROSS (empiezan por 9 y contienen "apross")
+app.post('/recetas-apross', isAuthenticated, async (req, res) => {
+  const { startDate, endDate, sucursal } = req.body;
+  let query = `SELECT numero FROM recetas 
+               WHERE fechacreacion BETWEEN $1 AND $2 
+               AND numero LIKE '9%' 
+               AND (sucursales ILIKE '%apross%' OR autorizacion ILIKE '%apross%')`;
+  const params = [startDate, endDate];
+
+  if (sucursal && sucursal !== 'all') {
+    query += ' AND sucursales = $3';
+    params.push(sucursal);
+  }
+
+  try {
+    const result = await pool.query(query, params);
+    const numeros = result.rows.map(r => r.numero);
+    const txtContent = numeros.join('\n');
+
+    res.setHeader('Content-disposition', 'attachment; filename=Codigos_APROSS.txt');
+    res.setHeader('Content-type', 'text/plain');
+    res.write(txtContent, () => {
+      res.end();
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error al obtener códigos APROSS');
+  }
+});
+
+// Ruta para descargar códigos PAMI (empiezan por 8)
+app.post('/recetas-pami', isAuthenticated, async (req, res) => {
+  const { startDate, endDate, sucursal } = req.body;
+  let query = `SELECT numero FROM recetas 
+               WHERE fechacreacion BETWEEN $1 AND $2 
+               AND numero LIKE '8%'`;
+  const params = [startDate, endDate];
+
+  if (sucursal && sucursal !== 'all') {
+    query += ' AND sucursales = $3';
+    params.push(sucursal);
+  }
+
+  try {
+    const result = await pool.query(query, params);
+    const numeros = result.rows.map(r => r.numero);
+    const txtContent = numeros.join('\n');
+
+    res.setHeader('Content-disposition', 'attachment; filename=Codigos_PAMI.txt');
+    res.setHeader('Content-type', 'text/plain');
+    res.write(txtContent, () => {
+      res.end();
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error al obtener códigos PAMI');
+  }
+});
+
+// Ruta para obtener la cantidad de códigos APROSS
+app.post('/recetas-apross-count', isAuthenticated, async (req, res) => {
+  const { startDate, endDate, sucursal } = req.body;
+  let query = `SELECT COUNT(*) FROM recetas 
+               WHERE fechacreacion BETWEEN $1 AND $2 
+               AND numero LIKE '9%' 
+               AND (sucursales ILIKE '%apross%' OR autorizacion ILIKE '%apross%')`;
+  const params = [startDate, endDate];
+
+  if (sucursal && sucursal !== 'all') {
+    query += ' AND sucursales = $3';
+    params.push(sucursal);
+  }
+
+  try {
+    const result = await pool.query(query, params);
+    res.json({ count: result.rows[0].count });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error al obtener la cantidad de códigos APROSS');
+  }
+});
+
+// Ruta para obtener la cantidad de códigos PAMI
+app.post('/recetas-pami-count', isAuthenticated, async (req, res) => {
+  const { startDate, endDate, sucursal } = req.body;
+  let query = `SELECT COUNT(*) FROM recetas 
+               WHERE fechacreacion BETWEEN $1 AND $2 
+               AND numero LIKE '8%'`;
+  const params = [startDate, endDate];
+
+  if (sucursal && sucursal !== 'all') {
+    query += ' AND sucursales = $3';
+    params.push(sucursal);
+  }
+
+  try {
+    const result = await pool.query(query, params);
+    res.json({ count: result.rows[0].count });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error al obtener la cantidad de códigos PAMI');
+  }
+});
+
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);

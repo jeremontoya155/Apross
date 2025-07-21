@@ -37,8 +37,10 @@ body {
   border-radius: 10px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   width: 700px;
-  height: 475px;
+  height: auto;
+  min-height: 475px;
   margin-top:6.5em;
+  margin-bottom: 4em;
   display:flex;
   align-items:center;
   justify-content: center;
@@ -170,4 +172,112 @@ footer {
 }
 .footer-content .footer-item:hover {
   transform: translateY(-3px); /* Desplaza el elemento hacia arriba */
+}
+
+/* Estilos para las nuevas opciones de descarga específicas */
+.download-options {
+  width: 100%;
+  margin-top: 20px;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.download-options h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  text-align: center;
+  color: #333;
+  font-size: 1.3em;
+}
+
+.specific-downloads {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.download-section {
+  flex: 1;
+  background-color: #ffffff;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e9ecef;
+}
+
+.download-info h4 {
+  margin: 0 0 8px 0;
+  color: #333;
+  font-size: 1.1em;
+}
+
+.download-info p {
+  margin: 0 0 10px 0;
+  color: #666;
+  font-size: 0.9em;
+}
+
+.count-display {
+  font-size: 0.9em;
+  color: #007bff;
+  font-weight: bold;
+  margin-bottom: 15px;
+  padding: 5px 10px;
+  background-color: #f0f8ff;
+  border-radius: 4px;
+  border: 1px solid #b3d9ff;
+}
+
+.download-apross {
+  background-color: #28a745;
+  border: 2px solid #28a745;
+  color: white;
+}
+
+.download-apross:hover {
+  background-color: #218838;
+  border-color: #1e7e34;
+}
+
+.download-pami {
+  background-color: #007bff;
+  border: 2px solid #007bff;
+  color: white;
+}
+
+.download-pami:hover {
+  background-color: #0056b3;
+  border-color: #004085;
+}
+
+.download-apross,
+.download-pami {
+  width: 100%;
+  padding: 10px 15px;
+  font-size: 0.95em;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.download-apross:disabled,
+.download-pami:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .specific-downloads {
+    flex-direction: column;
+  }
+  
+  .download-section {
+    margin-bottom: 10px;
+  }
 }

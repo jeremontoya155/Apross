@@ -33,9 +33,37 @@
             <div class="recetas-count" id="recetasCount"></div>
           </div>
           <div class="downloadContain">
-            <button type="submit" class="download">Descargar Codigos</button>
+            <button type="submit" class="download">Descargar Todos los Códigos</button>
           </div>
         </form>
+        
+        <!-- Nuevas opciones de descarga específicas -->
+        <div class="download-options">
+          <h3>Descargas Específicas</h3>
+          <div class="specific-downloads">
+            <div class="download-section">
+              <div class="download-info">
+                <h4>Códigos APROSS</h4>
+                <p>Códigos que empiezan por 9 y contienen "apross"</p>
+                <div class="count-display" id="aprossCount">Selecciona fechas para ver cantidad</div>
+              </div>
+              <button type="button" class="download download-apross" onclick="downloadApross()">
+                <i class="fas fa-download"></i> Descargar APROSS
+              </button>
+            </div>
+            
+            <div class="download-section">
+              <div class="download-info">
+                <h4>Códigos PAMI</h4>
+                <p>Códigos que empiezan por 8</p>
+                <div class="count-display" id="pamiCount">Selecciona fechas para ver cantidad</div>
+              </div>
+              <button type="button" class="download download-pami" onclick="downloadPami()">
+                <i class="fas fa-download"></i> Descargar PAMI
+              </button>
+            </div>
+          </div>
+        </div>
        
       
       </div>
@@ -92,11 +120,9 @@
           })
           .then(response => response.json())
           .then(data => {
-            if (data.count == 0){
-              document.getElementById('recetasCount').textContent = 'No se encontraron recetas';
-            } else{
-              document.getElementById('recetasCount').textContent = `Recetas encontradas: ${data.count}`;
-            }
+            updateCounts(data.count);
+            // También actualizar los conteos específicos
+            updateSpecificCounts();
           })
           .catch(error => console.error('Error:', error));
         } else {
@@ -122,15 +148,127 @@
         })
         .then(response => response.json())
         .then(data => {
-          if (data.count == 0){
-              document.getElementById('recetasCount').textContent = 'No se encontraron recetas';
-            } else{
-              document.getElementById('recetasCount').textContent = `Recetas encontradas: ${data.count}`;
-            }
+          updateCounts(data.count);
+          // También actualizar los conteos específicos
+          updateSpecificCounts();
         })
         .catch(error => console.error('Error:', error));
       }
     });
+
+    // Función para actualizar el conteo general
+    function updateCounts(count) {
+      if (count == 0) {
+        document.getElementById('recetasCount').textContent = 'No se encontraron recetas';
+      } else {
+        document.getElementById('recetasCount').textContent = `Recetas encontradas: ${count}`;
+      }
+    }
+
+    // Función para actualizar conteos específicos
+    function updateSpecificCounts() {
+      const startDate = document.getElementById('startDate').value;
+      const endDate = document.getElementById('endDate').value;
+      const sucursal = document.getElementById('sucursales').value;
+
+      if (startDate && endDate) {
+        // Obtener conteo APROSS
+        fetch('/recetas-apross-count', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ startDate, endDate, sucursal })
+        })
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById('aprossCount').textContent = `APROSS encontrados: ${data.count}`;
+        })
+        .catch(error => console.error('Error:', error));
+
+        // Obtener conteo PAMI
+        fetch('/recetas-pami-count', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ startDate, endDate, sucursal })
+        })
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById('pamiCount').textContent = `PAMI encontrados: ${data.count}`;
+        })
+        .catch(error => console.error('Error:', error));
+      }
+    }
+
+    // Función para descargar códigos APROSS
+    function downloadApross() {
+      const startDate = document.getElementById('startDate').value;
+      const endDate = document.getElementById('endDate').value;
+      const sucursal = document.getElementById('sucursales').value;
+
+      if (!startDate || !endDate) {
+        alert('Por favor selecciona un rango de fechas');
+        return;
+      }
+
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = '/recetas-apross';
+
+      const inputs = [
+        { name: 'startDate', value: startDate },
+        { name: 'endDate', value: endDate },
+        { name: 'sucursal', value: sucursal }
+      ];
+
+      inputs.forEach(input => {
+        const hiddenField = document.createElement('input');
+        hiddenField.type = 'hidden';
+        hiddenField.name = input.name;
+        hiddenField.value = input.value;
+        form.appendChild(hiddenField);
+      });
+
+      document.body.appendChild(form);
+      form.submit();
+      document.body.removeChild(form);
+    }
+
+    // Función para descargar códigos PAMI
+    function downloadPami() {
+      const startDate = document.getElementById('startDate').value;
+      const endDate = document.getElementById('endDate').value;
+      const sucursal = document.getElementById('sucursales').value;
+
+      if (!startDate || !endDate) {
+        alert('Por favor selecciona un rango de fechas');
+        return;
+      }
+
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = '/recetas-pami';
+
+      const inputs = [
+        { name: 'startDate', value: startDate },
+        { name: 'endDate', value: endDate },
+        { name: 'sucursal', value: sucursal }
+      ];
+
+      inputs.forEach(input => {
+        const hiddenField = document.createElement('input');
+        hiddenField.type = 'hidden';
+        hiddenField.name = input.name;
+        hiddenField.value = input.value;
+        form.appendChild(hiddenField);
+      });
+
+      document.body.appendChild(form);
+      form.submit();
+      document.body.removeChild(form);
+    }
   </script>
 </body>
 </html>
