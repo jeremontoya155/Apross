@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CAFAPRO - Dashboard Histórico</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_blue.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/es.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Navigation Header -->
+  <nav class="main-nav">
+    <div class="nav-container">
+      <div class="nav-brand">
+        <img src="/images/Cafapro.png" alt="CAFAPRO" class="nav-logo">
+        <span class="nav-title">CAFAPRO Dashboard</span>
+      </div>
+      <div class="nav-actions">
+        <div class="user-info">
+          <i class="fas fa-chart-line"></i>
+          <span>Dashboard Histórico</span>
+        </div>
+        <a href="/recetas" class="nav-link">
+          <i class="fas fa-prescription-bottle-medical"></i>
+          Recetas
+        </a>
+        <a href="/logout" class="btn-logout">
+          <i class="fas fa-sign-out-alt"></i>
+          Salir
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Container -->
+  <div class="main-container">
+    <div class="container-fluid">
+      <!-- Header Section -->
+      <div class="page-header">
+        <div class="header-content">
+          <h1 class="page-title">
+            <i class="fas fa-chart-line"></i>
+            Dashboard Histórico de Recetas
+          </h1>
+          <p class="page-subtitle">Análisis visual de datos históricos de recetas APROSS y PAMI</p>
+        </div>
+      </div>
+
+      <!-- Controls Panel -->
+      <div class="dashboard-controls">
+        <div class="panel">
+          <div class="panel-header">
+            <h3><i class="fas fa-sliders-h"></i> Filtros de Análisis</h3>
+            <p>Configura el período y parámetros para el análisis</p>
+          </div>
+          <div class="panel-body">
+            <div class="controls-grid">
+              <div class="control-group">
+                <label class="form-label">
+                  <i class="fas fa-calendar-alt"></i> Rango de Fechas
+                </label>
+                <div class="date-range-wrapper">
+                  <input type="text" id="dashboardDateRange" placeholder="Selecciona un rango de fechas">
+                  <input type="hidden" id="dashboardStartDate">
+                  <input type="hidden" id="dashboardEndDate">
+                </div>
+              </div>
+              
+              <div class="control-group">
+                <label for="dashboardSucursal" class="form-label">
+                  <i class="fas fa-building"></i> Sucursal
+                </label>
+                <select id="dashboardSucursal" class="form-select">
+                  <option value="all">🏢 Todas las sucursales</option>
+                </select>
+              </div>
+              
+              <div class="control-group">
+                <button type="button" id="updateDashboard" class="btn-dashboard" disabled>
+                  <i class="fas fa-sync-alt"></i>
+                  <span>Actualizar Dashboard</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary Cards -->
+      <div class="summary-overview" id="summaryOverview" style="display: none;">
+        <div class="summary-card total-card">
+          <div class="summary-icon">
+            <i class="fas fa-prescription-bottle-medical"></i>
+          </div>
+          <div class="summary-content">
+            <span class="summary-label">Total Período</span>
+            <span class="summary-value" id="totalPeriod">0</span>
+            <span class="summary-trend" id="totalTrend"></span>
+          </div>
+        </div>
+        
+        <div class="summary-card apross-card">
+          <div class="summary-icon">
+            <i class="fas fa-hospital"></i>
+          </div>
+          <div class="summary-content">
+            <span class="summary-label">Total APROSS</span>
+            <span class="summary-value" id="totalApross">0</span>
+            <span class="summary-trend" id="aprossTrend"></span>
+          </div>
+        </div>
+        
+        <div class="summary-card pami-card">
+          <div class="summary-icon">
+            <i class="fas fa-user-md"></i>
+          </div>
+          <div class="summary-content">
+            <span class="summary-label">Total PAMI</span>
+            <span class="summary-value" id="totalPami">0</span>
+            <span class="summary-trend" id="pamiTrend"></span>
+          </div>
+        </div>
+        
+        <div class="summary-card trend-card">
+          <div class="summary-icon">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          <div class="summary-content">
+            <span class="summary-label">Promedio Diario</span>
+            <span class="summary-value" id="dailyAverage">0</span>
+            <span class="summary-trend" id="avgTrend"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Grid -->
+      <div class="charts-grid" id="chartsGrid" style="display: none;">
+        <!-- Line Chart -->
+        <div class="chart-panel">
+          <div class="chart-header">
+            <h3><i class="fas fa-chart-line"></i> Tendencia Histórica</h3>
+            <p>Evolución diaria de recetas APROSS y PAMI</p>
+          </div>
+          <div class="chart-container">
+            <canvas id="lineChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Bar Chart -->
+        <div class="chart-panel">
+          <div class="chart-header">
+            <h3><i class="fas fa-chart-bar"></i> Comparativa por Tipo</h3>
+            <p>Distribución total APROSS vs PAMI</p>
+          </div>
+          <div class="chart-container">
+            <canvas id="barChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Pie Chart -->
+        <div class="chart-panel">
+          <div class="chart-header">
+            <h3><i class="fas fa-chart-pie"></i> Distribución Porcentual</h3>
+            <p>Proporción APROSS vs PAMI en el período</p>
+          </div>
+          <div class="chart-container">
+            <canvas id="pieChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Area Chart -->
+        <div class="chart-panel">
+          <div class="chart-header">
+            <h3><i class="fas fa-chart-area"></i> Volumen Acumulado</h3>
+            <p>Acumulado de recetas por tipo a lo largo del tiempo</p>
+          </div>
+          <div class="chart-container">
+            <canvas id="areaChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div class="loading-state" id="loadingState" style="display: none;">
+        <div class="loading-spinner">
+          <i class="fas fa-spinner fa-spin"></i>
+        </div>
+        <p>Cargando datos del dashboard...</p>
+      </div>
+
+      <!-- No Data State -->
+      <div class="no-data-state" id="noDataState" style="display: none;">
+        <div class="no-data-icon">
+          <i class="fas fa-chart-line"></i>
+        </div>
+        <h3>No hay datos disponibles</h3>
+        <p>No se encontraron recetas en el período seleccionado. Intenta con un rango de fechas diferente.</p>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="quick-actions">
+        <a href="/recetas" class="quick-action-btn">
+          <i class="fas fa-prescription-bottle-medical"></i>
+          <span>Gestión de Recetas</span>
+        </a>
+        <a href="/listado" class="quick-action-btn">
+          <i class="fas fa-list"></i>
+          <span>Ver Listado</span>
+        </a>
+        <button type="button" class="quick-action-btn" onclick="exportDashboard()">
+          <i class="fas fa-download"></i>
+          <span>Exportar Datos</span>
+        </button>
+        <button type="button" class="quick-action-btn" onclick="showDashboardHelp()">
+          <i class="fas fa-question-circle"></i>
+          <span>Ayuda</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="main-footer">
+    <%- include('partials/footer') %>
+  </footer>
+
+  <!-- Help Modal -->
+  <div id="dashboardHelpModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3><i class="fas fa-question-circle"></i> Ayuda del Dashboard</h3>
+        <button type="button" class="modal-close" onclick="closeDashboardHelp()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="help-section">
+          <h4><i class="fas fa-chart-line"></i> Tendencia Histórica</h4>
+          <p>Muestra la evolución diaria de recetas APROSS y PAMI a lo largo del tiempo seleccionado.</p>
+        </div>
+        <div class="help-section">
+          <h4><i class="fas fa-chart-bar"></i> Comparativa por Tipo</h4>
+          <p>Compara los totales de recetas APROSS vs PAMI en el período analizado.</p>
+        </div>
+        <div class="help-section">
+          <h4><i class="fas fa-chart-pie"></i> Distribución Porcentual</h4>
+          <p>Visualiza la proporción porcentual entre recetas APROSS y PAMI.</p>
+        </div>
+        <div class="help-section">
+          <h4><i class="fas fa-chart-area"></i> Volumen Acumulado</h4>
+          <p>Muestra el crecimiento acumulativo de recetas por tipo durante el período.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Estado global del dashboard
+    const dashboardState = {
+      selectedDates: null,
+      selectedSucursal: 'all',
+      chartInstances: {},
+      rawData: []
+    };
+
+    // Inicialización
+    document.addEventListener('DOMContentLoaded', async () => {
+      await initializeDashboard();
+    });
+
+    async function initializeDashboard() {
+      try {
+        // Cargar sucursales
+        await loadSucursalesForDashboard();
+        
+        // Inicializar selector de fechas
+        initializeDashboardDatePicker();
+        
+        // Configurar eventos
+        setupDashboardEventListeners();
+        
+        // Establecer fecha por defecto (últimos 30 días)
+        setDefaultDateRange();
+        
+      } catch (error) {
+        console.error('Error al inicializar dashboard:', error);
+      }
+    }
+
+    async function loadSucursalesForDashboard() {
+      try {
+        const response = await fetch('/sucursales');
+        const data = await response.json();
+        
+        const select = document.getElementById('dashboardSucursal');
+        data.forEach(sucursal => {
+          const option = document.createElement('option');
+          option.value = sucursal;
+          option.textContent = `Sucursal ${sucursal}`;
+          select.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Error al cargar sucursales:', error);
+      }
+    }
+
+    function initializeDashboardDatePicker() {
+      flatpickr("#dashboardDateRange", {
+        mode: "range",
+        dateFormat: "Y-m-d",
+        locale: 'es',
+        theme: 'material_blue',
+        maxDate: "today",
+        onChange: function(selectedDates, dateStr, instance) {
+          if (selectedDates.length === 2) {
+            const startDate = instance.formatDate(selectedDates[0], "Y-m-d");
+            const endDate = instance.formatDate(selectedDates[1], "Y-m-d");
+            
+            document.getElementById('dashboardStartDate').value = startDate;
+            document.getElementById('dashboardEndDate').value = endDate;
+            
+            dashboardState.selectedDates = { startDate, endDate };
+            
+            // Habilitar botón de actualización
+            document.getElementById('updateDashboard').disabled = false;
+          }
+        }
+      });
+    }
+
+    function setupDashboardEventListeners() {
+      // Botón de actualizar dashboard
+      document.getElementById('updateDashboard').addEventListener('click', updateDashboard);
+      
+      // Cambio de sucursal
+      document.getElementById('dashboardSucursal').addEventListener('change', function() {
+        dashboardState.selectedSucursal = this.value;
+        if (dashboardState.selectedDates) {
+          document.getElementById('updateDashboard').disabled = false;
+        }
+      });
+      
+      // Modal overlay
+      document.getElementById('dashboardHelpModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+          closeDashboardHelp();
+        }
+      });
+    }
+
+    function setDefaultDateRange() {
+      const today = new Date();
+      const thirtyDaysAgo = new Date(today);
+      thirtyDaysAgo.setDate(today.getDate() - 30);
+      
+      const picker = document.querySelector('#dashboardDateRange')._flatpickr;
+      picker.setDate([thirtyDaysAgo, today]);
+    }
+
+    async function updateDashboard() {
+      if (!dashboardState.selectedDates) {
+        alert('Por favor selecciona un rango de fechas');
+        return;
+      }
+
+      const { startDate, endDate } = dashboardState.selectedDates;
+      const sucursal = dashboardState.selectedSucursal;
+
+      // Mostrar loading
+      showLoading();
+      hideCharts();
+      hideSummary();
+
+      try {
+        const response = await fetch('/dashboard-data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ startDate, endDate, sucursal })
+        });
+
+        const result = await response.json();
+        
+        if (result.data && result.data.length > 0) {
+          dashboardState.rawData = result.data;
+          
+          // Actualizar resumen
+          updateSummaryCards(result.totals, result.data);
+          
+          // Crear/actualizar gráficos
+          createCharts(result.data);
+          
+          // Mostrar elementos
+          showSummary();
+          showCharts();
+        } else {
+          showNoData();
+        }
+        
+      } catch (error) {
+        console.error('Error al obtener datos del dashboard:', error);
+        alert('Error al cargar los datos del dashboard');
+      } finally {
+        hideLoading();
+        // Deshabilitar botón hasta el próximo cambio
+        document.getElementById('updateDashboard').disabled = true;
+      }
+    }
+
+    function updateSummaryCards(totals, data) {
+      // Actualizar totales
+      document.getElementById('totalPeriod').textContent = totals.total.toLocaleString();
+      document.getElementById('totalApross').textContent = totals.apross.toLocaleString();
+      document.getElementById('totalPami').textContent = totals.pami.toLocaleString();
+      
+      // Calcular promedio diario
+      const days = data.length;
+      const dailyAvg = days > 0 ? Math.round(totals.total / days) : 0;
+      document.getElementById('dailyAverage').textContent = dailyAvg.toLocaleString();
+      
+      // Calcular tendencias (porcentajes)
+      const aprossPercentage = totals.total > 0 ? ((totals.apross / totals.total) * 100).toFixed(1) : 0;
+      const pamiPercentage = totals.total > 0 ? ((totals.pami / totals.total) * 100).toFixed(1) : 0;
+      
+      document.getElementById('aprossTrend').textContent = `${aprossPercentage}%`;
+      document.getElementById('pamiTrend').textContent = `${pamiPercentage}%`;
+      document.getElementById('totalTrend').textContent = `${days} días`;
+      document.getElementById('avgTrend').textContent = 'por día';
+    }
+
+    function createCharts(data) {
+      // Destruir gráficos existentes
+      Object.values(dashboardState.chartInstances).forEach(chart => {
+        if (chart) chart.destroy();
+      });
+
+      const labels = data.map(d => new Date(d.date).toLocaleDateString('es-ES', { 
+        day: '2-digit', 
+        month: '2-digit' 
+      }));
+      
+      const aprossData = data.map(d => d.apross);
+      const pamiData = data.map(d => d.pami);
+      const totalData = data.map(d => d.total);
+
+      // Colores del tema
+      const colors = {
+        apross: {
+          primary: '#48bb78',
+          light: 'rgba(72, 187, 120, 0.2)',
+          gradient: ['#48bb78', '#38a169']
+        },
+        pami: {
+          primary: '#4299e1',
+          light: 'rgba(66, 153, 225, 0.2)',
+          gradient: ['#4299e1', '#3182ce']
+        },
+        total: {
+          primary: '#667eea',
+          light: 'rgba(102, 126, 234, 0.2)',
+          gradient: ['#667eea', '#764ba2']
+        }
+      };
+
+      // Gráfico de línea
+      const lineCtx = document.getElementById('lineChart').getContext('2d');
+      dashboardState.chartInstances.lineChart = new Chart(lineCtx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'APROSS',
+              data: aprossData,
+              borderColor: colors.apross.primary,
+              backgroundColor: colors.apross.light,
+              borderWidth: 3,
+              fill: false,
+              tension: 0.4,
+              pointBackgroundColor: colors.apross.primary,
+              pointBorderColor: '#fff',
+              pointBorderWidth: 2,
+              pointRadius: 5
+            },
+            {
+              label: 'PAMI',
+              data: pamiData,
+              borderColor: colors.pami.primary,
+              backgroundColor: colors.pami.light,
+              borderWidth: 3,
+              fill: false,
+              tension: 0.4,
+              pointBackgroundColor: colors.pami.primary,
+              pointBorderColor: '#fff',
+              pointBorderWidth: 2,
+              pointRadius: 5
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                usePointStyle: true,
+                font: { size: 12, family: 'Inter' }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              grid: { color: 'rgba(0,0,0,0.1)' },
+              ticks: { font: { family: 'Inter' } }
+            },
+            x: {
+              grid: { color: 'rgba(0,0,0,0.1)' },
+              ticks: { font: { family: 'Inter' } }
+            }
+          }
+        }
+      });
+
+      // Gráfico de barras
+      const barCtx = document.getElementById('barChart').getContext('2d');
+      const totalApross = aprossData.reduce((a, b) => a + b, 0);
+      const totalPami = pamiData.reduce((a, b) => a + b, 0);
+      
+      dashboardState.chartInstances.barChart = new Chart(barCtx, {
+        type: 'bar',
+        data: {
+          labels: ['APROSS', 'PAMI'],
+          datasets: [{
+            label: 'Total de Recetas',
+            data: [totalApross, totalPami],
+            backgroundColor: [colors.apross.primary, colors.pami.primary],
+            borderColor: [colors.apross.primary, colors.pami.primary],
+            borderWidth: 2,
+            borderRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              grid: { color: 'rgba(0,0,0,0.1)' },
+              ticks: { font: { family: 'Inter' } }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { font: { family: 'Inter', size: 14, weight: 'bold' } }
+            }
+          }
+        }
+      });
+
+      // Gráfico de torta
+      const pieCtx = document.getElementById('pieChart').getContext('2d');
+      dashboardState.chartInstances.pieChart = new Chart(pieCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['APROSS', 'PAMI'],
+          datasets: [{
+            data: [totalApross, totalPami],
+            backgroundColor: [colors.apross.primary, colors.pami.primary],
+            borderWidth: 3,
+            borderColor: '#fff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                usePointStyle: true,
+                font: { size: 12, family: 'Inter' },
+                padding: 20
+              }
+            }
+          }
+        }
+      });
+
+      // Gráfico de área
+      const areaCtx = document.getElementById('areaChart').getContext('2d');
+      const cumulativeApross = [];
+      const cumulativePami = [];
+      let aprossSum = 0;
+      let pamiSum = 0;
+      
+      aprossData.forEach(value => {
+        aprossSum += value;
+        cumulativeApross.push(aprossSum);
+      });
+      
+      pamiData.forEach(value => {
+        pamiSum += value;
+        cumulativePami.push(pamiSum);
+      });
+
+      dashboardState.chartInstances.areaChart = new Chart(areaCtx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'APROSS Acumulado',
+              data: cumulativeApross,
+              borderColor: colors.apross.primary,
+              backgroundColor: colors.apross.light,
+              borderWidth: 2,
+              fill: true,
+              tension: 0.4
+            },
+            {
+              label: 'PAMI Acumulado',
+              data: cumulativePami,
+              borderColor: colors.pami.primary,
+              backgroundColor: colors.pami.light,
+              borderWidth: 2,
+              fill: true,
+              tension: 0.4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                usePointStyle: true,
+                font: { size: 12, family: 'Inter' }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              stacked: false,
+              grid: { color: 'rgba(0,0,0,0.1)' },
+              ticks: { font: { family: 'Inter' } }
+            },
+            x: {
+              grid: { color: 'rgba(0,0,0,0.1)' },
+              ticks: { font: { family: 'Inter' } }
+            }
+          }
+        }
+      });
+    }
+
+    // Funciones de UI
+    function showLoading() {
+      document.getElementById('loadingState').style.display = 'flex';
+    }
+
+    function hideLoading() {
+      document.getElementById('loadingState').style.display = 'none';
+    }
+
+    function showCharts() {
+      document.getElementById('chartsGrid').style.display = 'grid';
+      document.getElementById('noDataState').style.display = 'none';
+    }
+
+    function hideCharts() {
+      document.getElementById('chartsGrid').style.display = 'none';
+    }
+
+    function showSummary() {
+      document.getElementById('summaryOverview').style.display = 'grid';
+    }
+
+    function hideSummary() {
+      document.getElementById('summaryOverview').style.display = 'none';
+    }
+
+    function showNoData() {
+      document.getElementById('noDataState').style.display = 'flex';
+      hideCharts();
+      hideSummary();
+    }
+
+    function showDashboardHelp() {
+      document.getElementById('dashboardHelpModal').style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeDashboardHelp() {
+      document.getElementById('dashboardHelpModal').style.display = 'none';
+      document.body.style.overflow = 'auto';
+    }
+
+    function exportDashboard() {
+      if (dashboardState.rawData.length === 0) {
+        alert('No hay datos para exportar');
+        return;
+      }
+
+      // Crear CSV
+      const headers = ['Fecha', 'Total', 'APROSS', 'PAMI'];
+      const csvContent = [
+        headers.join(','),
+        ...dashboardState.rawData.map(row => 
+          [row.date, row.total, row.apross, row.pami].join(',')
+        )
+      ].join('\n');
+
+      // Descargar archivo
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `dashboard-historico-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // Cerrar modal con tecla Escape
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeDashboardHelp();
+      }
+    });
+  </script>
+</body>
+</html>

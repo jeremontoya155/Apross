@@ -319,6 +319,75 @@ app.post('/recetas-pami-count', isAuthenticated, async (req, res) => {
   }
 });
 
+// Nueva ruta para el dashboard
+app.get('/dashboard', isAuthenticated, (req, res) => {
+  res.render('dashboard');
+});
+
+// API para obtener datos históricos del dashboard
+app.post('/dashboard-data', isAuthenticated, async (req, res) => {
+  const { startDate, endDate, sucursal } = req.body;
+  
+  try {
+    // Query base para obtener datos agrupados por día
+    let baseQuery = `
+      SELECT 
+        fechacreacion,
+        COUNT(*) as total,
+        COUNT(CASE WHEN numero LIKE '9%' AND (sucursales ILIKE '%apross%' OR autorizacion ILIKE '%apross%') THEN 1 END) as apross,
+        COUNT(CASE WHEN numero LIKE '8%' THEN 1 END) as pami
+      FROM recetas 
+      WHERE fechacreacion BETWEEN $1 AND $2
+    `;
+    
+    const params = [startDate, endDate];
+    
+    if (sucursal && sucursal !== 'all') {
+      baseQuery += ' AND sucursales = $3';
+      params.push(sucursal);
+    }
+    
+    baseQuery += ' GROUP BY fechacreacion ORDER BY fechacreacion ASC';
+    
+    const result = await pool.query(baseQuery, params);
+    
+    // Formatear datos para Chart.js
+    const data = result.rows.map(row => ({
+      date: row.fechacreacion,
+      total: parseInt(row.total),
+      apross: parseInt(row.apross),
+      pami: parseInt(row.pami)
+    }));
+    
+    // Obtener totales generales
+    const totalsQuery = `
+      SELECT 
+        COUNT(*) as total_general,
+        COUNT(CASE WHEN numero LIKE '9%' AND (sucursales ILIKE '%apross%' OR autorizacion ILIKE '%apross%') THEN 1 END) as total_apross,
+        COUNT(CASE WHEN numero LIKE '8%' THEN 1 END) as total_pami
+      FROM recetas 
+      WHERE fechacreacion BETWEEN $1 AND $2
+      ${sucursal && sucursal !== 'all' ? 'AND sucursales = $3' : ''}
+    `;
+    
+    const totalsResult = await pool.query(totalsQuery, params);
+    const totals = totalsResult.rows[0];
+    
+    res.json({
+      data: data,
+      totals: {
+        total: parseInt(totals.total_general),
+        apross: parseInt(totals.total_apross),
+        pami: parseInt(totals.total_pami)
+      }
+    });
+    
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener datos del dashboard' });
+  }
+});
+
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
