@@ -215,13 +215,12 @@ app.get('/logout', (req, res) => {
   });
 });
 
-// Ruta para descargar códigos APROSS (empiezan por 9 y contienen "apross")
+// Ruta para descargar códigos APROSS (empiezan por 9)
 app.post('/recetas-apross', isAuthenticated, async (req, res) => {
   const { startDate, endDate, sucursal } = req.body;
   let query = `SELECT numero FROM recetas 
                WHERE fechacreacion BETWEEN $1 AND $2 
-               AND numero LIKE '9%' 
-               AND (sucursales ILIKE '%apross%' OR autorizacion ILIKE '%apross%')`;
+               AND numero LIKE '9%'`;
   const params = [startDate, endDate];
 
   if (sucursal && sucursal !== 'all') {
@@ -279,8 +278,7 @@ app.post('/recetas-apross-count', isAuthenticated, async (req, res) => {
   const { startDate, endDate, sucursal } = req.body;
   let query = `SELECT COUNT(*) FROM recetas 
                WHERE fechacreacion BETWEEN $1 AND $2 
-               AND numero LIKE '9%' 
-               AND (sucursales ILIKE '%apross%' OR autorizacion ILIKE '%apross%')`;
+               AND numero LIKE '9%'`;
   const params = [startDate, endDate];
 
   if (sucursal && sucursal !== 'all') {
@@ -334,7 +332,7 @@ app.post('/dashboard-data', isAuthenticated, async (req, res) => {
       SELECT 
         fechacreacion,
         COUNT(*) as total,
-        COUNT(CASE WHEN numero LIKE '9%' AND (sucursales ILIKE '%apross%' OR autorizacion ILIKE '%apross%') THEN 1 END) as apross,
+        COUNT(CASE WHEN numero LIKE '9%' THEN 1 END) as apross,
         COUNT(CASE WHEN numero LIKE '8%' THEN 1 END) as pami
       FROM recetas 
       WHERE fechacreacion BETWEEN $1 AND $2
@@ -363,7 +361,7 @@ app.post('/dashboard-data', isAuthenticated, async (req, res) => {
     const totalsQuery = `
       SELECT 
         COUNT(*) as total_general,
-        COUNT(CASE WHEN numero LIKE '9%' AND (sucursales ILIKE '%apross%' OR autorizacion ILIKE '%apross%') THEN 1 END) as total_apross,
+        COUNT(CASE WHEN numero LIKE '9%' THEN 1 END) as total_apross,
         COUNT(CASE WHEN numero LIKE '8%' THEN 1 END) as total_pami
       FROM recetas 
       WHERE fechacreacion BETWEEN $1 AND $2
