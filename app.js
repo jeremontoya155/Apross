@@ -72,6 +72,7 @@ app.get('/recetas', isAuthenticated, (req, res) => {
   res.render('recetas');
 });
 
+// Ruta principal para descargar todos los códigos - SOLO NÚMEROS LIMPIOS
 app.post('/recetas', isAuthenticated, async (req, res) => {
   const { startDate, endDate, sucursal } = req.body;
   let query = 'SELECT numero FROM recetas WHERE fechacreacion BETWEEN $1 AND $2';
@@ -82,16 +83,46 @@ app.post('/recetas', isAuthenticated, async (req, res) => {
     params.push(sucursal);
   }
 
-  const result = await pool.query(query, params);
+  try {
+    const result = await pool.query(query, params);
 
-  const numeros = result.rows.map(r => r.numero);
-  const txtContent = numeros.join('\n');
+    // Limpiar y corregir números automáticamente
+    const numeros = result.rows
+      .map(r => r.numero)
+      .map(numero => {
+        // Convertir caracteres comunes mal escaneados a números
+        let cleaned = numero
+          .replace(/[&]/g, '6')      // & -> 6
+          .replace(/[']/g, '7')      // ' -> 7  
+          .replace(/[(]/g, '6')      // ( -> 6
+          .replace(/[)]/g, '0')      // ) -> 0
+          .replace(/[O]/g, '0')      // O -> 0
+          .replace(/[I]/g, '1')      // I -> 1
+          .replace(/[l]/g, '1')      // l -> 1
+          .replace(/[S]/g, '5')      // S -> 5
+          .replace(/[s]/g, '5')      // s -> 5
+          .replace(/[B]/g, '8')      // B -> 8
+          .replace(/[Z]/g, '2')      // Z -> 2
+          .replace(/[G]/g, '6')      // G -> 6
+          .replace(/[D]/g, '0')      // D -> 0
+          .replace(/[^0-9]/g, '');   // Remover todo lo que no sea número después de las correcciones
+        
+        return cleaned;
+      })
+      .filter(numero => numero.length > 0) // Solo números válidos no vacíos
+      .filter((numero, index, array) => array.indexOf(numero) === index); // Remover duplicados
 
-  res.setHeader('Content-disposition', 'attachment; filename=Codigos.txt');
-  res.setHeader('Content-type', 'text/plain');
-  res.write(txtContent, () => {
-    res.end();
-  });
+    const txtContent = numeros.join('\n');
+
+    res.setHeader('Content-disposition', 'attachment; filename=Codigos.txt');
+    res.setHeader('Content-type', 'text/plain');
+    res.write(txtContent, () => {
+      res.end();
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error al obtener las recetas');
+  }
 });
 
 // Nueva ruta para obtener la cantidad de recetas en un rango de fechas y sucursal específica
@@ -215,7 +246,7 @@ app.get('/logout', (req, res) => {
   });
 });
 
-// Ruta para descargar códigos APROSS (empiezan por 9)
+// Ruta para descargar códigos APROSS (empiezan por 9) - NÚMEROS CORREGIDOS
 app.post('/recetas-apross', isAuthenticated, async (req, res) => {
   const { startDate, endDate, sucursal } = req.body;
   let query = `SELECT numero FROM recetas 
@@ -230,7 +261,33 @@ app.post('/recetas-apross', isAuthenticated, async (req, res) => {
 
   try {
     const result = await pool.query(query, params);
-    const numeros = result.rows.map(r => r.numero);
+    
+    // Limpiar y corregir números automáticamente
+    const numeros = result.rows
+      .map(r => r.numero)
+      .map(numero => {
+        // Convertir caracteres comunes mal escaneados a números
+        let cleaned = numero
+          .replace(/[&]/g, '6')      // & -> 6
+          .replace(/[']/g, '7')      // ' -> 7  
+          .replace(/[(]/g, '6')      // ( -> 6
+          .replace(/[)]/g, '0')      // ) -> 0
+          .replace(/[O]/g, '0')      // O -> 0
+          .replace(/[I]/g, '1')      // I -> 1
+          .replace(/[l]/g, '1')      // l -> 1
+          .replace(/[S]/g, '5')      // S -> 5
+          .replace(/[s]/g, '5')      // s -> 5
+          .replace(/[B]/g, '8')      // B -> 8
+          .replace(/[Z]/g, '2')      // Z -> 2
+          .replace(/[G]/g, '6')      // G -> 6
+          .replace(/[D]/g, '0')      // D -> 0
+          .replace(/[^0-9]/g, '');   // Remover todo lo que no sea número después de las correcciones
+        
+        return cleaned;
+      })
+      .filter(numero => numero.length > 0 && numero.startsWith('9')) // Solo números válidos que empiecen por 9
+      .filter((numero, index, array) => array.indexOf(numero) === index); // Remover duplicados
+
     const txtContent = numeros.join('\n');
 
     res.setHeader('Content-disposition', 'attachment; filename=Codigos_APROSS.txt');
@@ -244,7 +301,7 @@ app.post('/recetas-apross', isAuthenticated, async (req, res) => {
   }
 });
 
-// Ruta para descargar códigos PAMI (empiezan por 8)
+// Ruta para descargar códigos PAMI (empiezan por 8) - NÚMEROS CORREGIDOS
 app.post('/recetas-pami', isAuthenticated, async (req, res) => {
   const { startDate, endDate, sucursal } = req.body;
   let query = `SELECT numero FROM recetas 
@@ -259,7 +316,35 @@ app.post('/recetas-pami', isAuthenticated, async (req, res) => {
 
   try {
     const result = await pool.query(query, params);
-    const numeros = result.rows.map(r => r.numero);
+    
+    // Limpiar y corregir números automáticamente
+    const numeros = result.rows
+      .map(r => r.numero)
+      .map(numero => {
+        // Convertir caracteres comunes mal escaneados a números
+        let cleaned = numero
+          .replace(/[&]/g, '6')      // & -> 6
+          .replace(/[']/g, '7')      // ' -> 7  
+          .replace(/[(]/g, '6')      // ( -> 6
+          .replace(/[)]/g, '0')      // ) -> 0
+          .replace(/[O]/g, '0')      // O -> 0
+          .replace(/[I]/g, '1')      // I -> 1
+          .replace(/[l]/g, '1')      // l -> 1
+
+          
+          .replace(/[S]/g, '5')      // S -> 5
+          .replace(/[s]/g, '5')      // s -> 5
+          .replace(/[B]/g, '8')      // B -> 8
+          .replace(/[Z]/g, '2')      // Z -> 2
+          .replace(/[G]/g, '6')      // G -> 6
+          .replace(/[D]/g, '0')      // D -> 0
+          .replace(/[^0-9]/g, '');   // Remover todo lo que no sea número después de las correcciones
+        
+        return cleaned;
+      })
+      .filter(numero => numero.length > 0 && numero.startsWith('8')) // Solo números válidos que empiecen por 8
+      .filter((numero, index, array) => array.indexOf(numero) === index); // Remover duplicados
+
     const txtContent = numeros.join('\n');
 
     res.setHeader('Content-disposition', 'attachment; filename=Codigos_PAMI.txt');
