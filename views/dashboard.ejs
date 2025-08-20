@@ -373,10 +373,13 @@
       const { startDate, endDate } = dashboardState.selectedDates;
       const sucursal = dashboardState.selectedSucursal;
 
+      console.log('Updating dashboard with:', { startDate, endDate, sucursal });
+
       // Mostrar loading
       showLoading();
       hideCharts();
       hideSummary();
+      hideNoData();
 
       try {
         const response = await fetch('/dashboard-data', {
@@ -385,7 +388,17 @@
           body: JSON.stringify({ startDate, endDate, sucursal })
         });
 
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
         const result = await response.json();
+        
+        console.log('Dashboard response:', result);
+        
+        if (result.error) {
+          throw new Error(result.error);
+        }
         
         if (result.data && result.data.length > 0) {
           dashboardState.rawData = result.data;
@@ -400,12 +413,14 @@
           showSummary();
           showCharts();
         } else {
+          console.log('No data found for the selected period');
           showNoData();
         }
         
       } catch (error) {
         console.error('Error al obtener datos del dashboard:', error);
-        alert('Error al cargar los datos del dashboard');
+        alert(`Error al cargar los datos del dashboard: ${error.message}`);
+        showNoData();
       } finally {
         hideLoading();
         // Deshabilitar botón hasta el próximo cambio
@@ -666,7 +681,7 @@
       });
     }
 
-    // Funciones de UI
+    // Funciones de UI mejoradas
     function showLoading() {
       document.getElementById('loadingState').style.display = 'flex';
     }
@@ -677,7 +692,6 @@
 
     function showCharts() {
       document.getElementById('chartsGrid').style.display = 'grid';
-      document.getElementById('noDataState').style.display = 'none';
     }
 
     function hideCharts() {
@@ -694,8 +708,10 @@
 
     function showNoData() {
       document.getElementById('noDataState').style.display = 'flex';
-      hideCharts();
-      hideSummary();
+    }
+
+    function hideNoData() {
+      document.getElementById('noDataState').style.display = 'none';
     }
 
     function showDashboardHelp() {

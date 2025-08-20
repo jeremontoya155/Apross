@@ -330,8 +330,6 @@ app.post('/recetas-pami', isAuthenticated, async (req, res) => {
           .replace(/[O]/g, '0')      // O -> 0
           .replace(/[I]/g, '1')      // I -> 1
           .replace(/[l]/g, '1')      // l -> 1
-
-          
           .replace(/[S]/g, '5')      // S -> 5
           .replace(/[s]/g, '5')      // s -> 5
           .replace(/[B]/g, '8')      // B -> 8
@@ -362,7 +360,7 @@ app.post('/recetas-pami', isAuthenticated, async (req, res) => {
 app.post('/recetas-apross-count', isAuthenticated, async (req, res) => {
   const { startDate, endDate, sucursal } = req.body;
   let query = `SELECT COUNT(*) FROM recetas 
-               WHERE fechacreacion BETWEEN $1 AND $2 
+               WHERE fechacreacion BETWEEN $1 AND $2  
                AND numero LIKE '9%'`;
   const params = [startDate, endDate];
 
@@ -384,7 +382,7 @@ app.post('/recetas-apross-count', isAuthenticated, async (req, res) => {
 app.post('/recetas-pami-count', isAuthenticated, async (req, res) => {
   const { startDate, endDate, sucursal } = req.body;
   let query = `SELECT COUNT(*) FROM recetas 
-               WHERE fechacreacion BETWEEN $1 AND $2 
+               WHERE fechacreacion BETWEEN $1 AND $2  
                AND numero LIKE '8%'`;
   const params = [startDate, endDate];
 
@@ -415,12 +413,12 @@ app.post('/dashboard-data', isAuthenticated, async (req, res) => {
     // Query base para obtener datos agrupados por día
     let baseQuery = `
       SELECT 
-        fechacreacion,
+        fechacreacion::date as date,
         COUNT(*) as total,
         COUNT(CASE WHEN numero LIKE '9%' THEN 1 END) as apross,
         COUNT(CASE WHEN numero LIKE '8%' THEN 1 END) as pami
       FROM recetas 
-      WHERE fechacreacion BETWEEN $1 AND $2
+      WHERE fechacreacion::date BETWEEN $1::date AND $2::date
     `;
     
     const params = [startDate, endDate];
@@ -430,31 +428,41 @@ app.post('/dashboard-data', isAuthenticated, async (req, res) => {
       params.push(sucursal);
     }
     
-    baseQuery += ' GROUP BY fechacreacion ORDER BY fechacreacion ASC';
+    baseQuery += ' GROUP BY fechacreacion::date ORDER BY fechacreacion::date ASC';
+    
+    console.log('Dashboard Query:', baseQuery);
+    console.log('Dashboard Params:', params);
     
     const result = await pool.query(baseQuery, params);
     
+    console.log('Dashboard Result:', result.rows);
+    
     // Formatear datos para Chart.js
     const data = result.rows.map(row => ({
-      date: row.fechacreacion,
+      date: row.date,
       total: parseInt(row.total),
       apross: parseInt(row.apross),
       pami: parseInt(row.pami)
     }));
     
     // Obtener totales generales
-    const totalsQuery = `
+    let totalsQuery = `
       SELECT 
         COUNT(*) as total_general,
         COUNT(CASE WHEN numero LIKE '9%' THEN 1 END) as total_apross,
         COUNT(CASE WHEN numero LIKE '8%' THEN 1 END) as total_pami
       FROM recetas 
-      WHERE fechacreacion BETWEEN $1 AND $2
-      ${sucursal && sucursal !== 'all' ? 'AND sucursales = $3' : ''}
+      WHERE fechacreacion::date BETWEEN $1::date AND $2::date
     `;
+    
+    if (sucursal && sucursal !== 'all') {
+      totalsQuery += ' AND sucursales = $3';
+    }
     
     const totalsResult = await pool.query(totalsQuery, params);
     const totals = totalsResult.rows[0];
+    
+    console.log('Dashboard Totals:', totals);
     
     res.json({
       data: data,
@@ -466,8 +474,49 @@ app.post('/dashboard-data', isAuthenticated, async (req, res) => {
     });
     
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error al obtener datos del dashboard' });
+    console.error('Error en dashboard-data:', err);
+    res.status(500).json({ error: 'Error al obtener datos del dashboard', details: err.message });
+  }
+});
+
+// Ruta de prueba para verificar datos en la base
+app.get('/test-data', isAuthenticated, async (req, res) => {
+  try {
+    // Verificar estructura de la tabla
+    const tableInfo = await pool.query(`
+      SELECT column_name, data_type 
+      FROM information_schema.columns 
+      WHERE table_name = 'recetas'
+      ORDER BY ordinal_position;
+    `);
+    
+    // Obtener algunas filas de ejemplo
+    const sampleData = await pool.query('SELECT * FROM recetas LIMIT 5');
+    
+    // Contar total de registros
+    const totalCount = await pool.query('SELECT COUNT(*) FROM recetas');
+    
+    // Contar por tipo de número
+    const typeCount = await pool.query(`
+      SELECT 
+        COUNT(CASE WHEN numero LIKE '9%' THEN 1 END) as apross_count,
+        COUNT(CASE WHEN numero LIKE '8%' THEN 1 END) as pami_count,
+        COUNT(*) as total_count,
+        MIN(fechacreacion) as min_date,
+        MAX(fechacreacion) as max_date
+      FROM recetas
+    `);
+    
+    res.json({
+      tableStructure: tableInfo.rows,
+      sampleData: sampleData.rows,
+      totalRecords: totalCount.rows[0].count,
+      statistics: typeCount.rows[0]
+    });
+    
+  } catch (err) {
+    console.error('Error en test-data:', err);
+    res.status(500).json({ error: err.message });
   }
 });
 
