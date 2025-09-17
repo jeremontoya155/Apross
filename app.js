@@ -75,7 +75,7 @@ app.get('/recetas', isAuthenticated, (req, res) => {
 // Ruta principal para descargar todos los códigos - SOLO NÚMEROS LIMPIOS
 app.post('/recetas', isAuthenticated, async (req, res) => {
   const { startDate, endDate, sucursal } = req.body;
-  let query = 'SELECT numero FROM recetas WHERE fechacreacion BETWEEN $1 AND $2';
+  let query = 'SELECT numero FROM recetas WHERE fechacreacion BETWEEN $1 AND $2 AND LENGTH(numero) NOT BETWEEN 11 AND 12';
   const params = [startDate, endDate];
 
   if (sucursal && sucursal !== 'all') {
@@ -109,7 +109,7 @@ app.post('/recetas', isAuthenticated, async (req, res) => {
         
         return cleaned;
       })
-      .filter(numero => numero.length > 0) // Solo números válidos no vacíos
+      .filter(numero => numero.length > 0 && (numero.length < 11 || numero.length > 12)) // Filtrar por longitud después de limpiar
       .filter((numero, index, array) => array.indexOf(numero) === index); // Remover duplicados
 
     const txtContent = numeros.join('\n');
@@ -128,7 +128,7 @@ app.post('/recetas', isAuthenticated, async (req, res) => {
 // Nueva ruta para obtener la cantidad de recetas en un rango de fechas y sucursal específica
 app.post('/recetas-count', isAuthenticated, async (req, res) => {
   const { startDate, endDate, sucursal } = req.body;
-  let query = 'SELECT COUNT(*) FROM recetas WHERE fechacreacion BETWEEN $1 AND $2';
+  let query = 'SELECT COUNT(*) FROM recetas WHERE fechacreacion BETWEEN $1 AND $2 AND LENGTH(numero) NOT BETWEEN 11 AND 12';
   const params = [startDate, endDate];
 
   if (sucursal && sucursal !== 'all') {
@@ -251,7 +251,8 @@ app.post('/recetas-apross', isAuthenticated, async (req, res) => {
   const { startDate, endDate, sucursal } = req.body;
   let query = `SELECT numero FROM recetas 
                WHERE fechacreacion BETWEEN $1 AND $2 
-               AND numero LIKE '9%'`;
+               AND numero LIKE '9%'
+               AND LENGTH(numero) NOT BETWEEN 11 AND 12`;
   const params = [startDate, endDate];
 
   if (sucursal && sucursal !== 'all') {
@@ -285,7 +286,7 @@ app.post('/recetas-apross', isAuthenticated, async (req, res) => {
         
         return cleaned;
       })
-      .filter(numero => numero.length > 0 && numero.startsWith('9')) // Solo números válidos que empiecen por 9
+      .filter(numero => numero.length > 0 && numero.startsWith('9') && (numero.length < 11 || numero.length > 12)) // Solo números válidos que empiecen por 9 y no tengan 11-12 caracteres
       .filter((numero, index, array) => array.indexOf(numero) === index); // Remover duplicados
 
     const txtContent = numeros.join('\n');
@@ -306,7 +307,8 @@ app.post('/recetas-pami', isAuthenticated, async (req, res) => {
   const { startDate, endDate, sucursal } = req.body;
   let query = `SELECT numero FROM recetas 
                WHERE fechacreacion BETWEEN $1 AND $2 
-               AND numero LIKE '8%'`;
+               AND numero LIKE '8%'
+               AND LENGTH(numero) NOT BETWEEN 11 AND 12`;
   const params = [startDate, endDate];
 
   if (sucursal && sucursal !== 'all') {
@@ -340,7 +342,7 @@ app.post('/recetas-pami', isAuthenticated, async (req, res) => {
         
         return cleaned;
       })
-      .filter(numero => numero.length > 0 && numero.startsWith('8')) // Solo números válidos que empiecen por 8
+      .filter(numero => numero.length > 0 && numero.startsWith('8') && (numero.length < 11 || numero.length > 12)) // Solo números válidos que empiecen por 8 y no tengan 11-12 caracteres
       .filter((numero, index, array) => array.indexOf(numero) === index); // Remover duplicados
 
     const txtContent = numeros.join('\n');
@@ -361,7 +363,8 @@ app.post('/recetas-apross-count', isAuthenticated, async (req, res) => {
   const { startDate, endDate, sucursal } = req.body;
   let query = `SELECT COUNT(*) FROM recetas 
                WHERE fechacreacion BETWEEN $1 AND $2  
-               AND numero LIKE '9%'`;
+               AND numero LIKE '9%'
+               AND LENGTH(numero) NOT BETWEEN 11 AND 12`;
   const params = [startDate, endDate];
 
   if (sucursal && sucursal !== 'all') {
@@ -383,7 +386,8 @@ app.post('/recetas-pami-count', isAuthenticated, async (req, res) => {
   const { startDate, endDate, sucursal } = req.body;
   let query = `SELECT COUNT(*) FROM recetas 
                WHERE fechacreacion BETWEEN $1 AND $2  
-               AND numero LIKE '8%'`;
+               AND numero LIKE '8%'
+               AND LENGTH(numero) NOT BETWEEN 11 AND 12`;
   const params = [startDate, endDate];
 
   if (sucursal && sucursal !== 'all') {
